@@ -57,26 +57,26 @@ export default function Page() {
   const onExport = async () => {
     if (!stageRef.current) return;
     setExporting(true);
+    const filename = `ibkr-${state.targetReturnPct}pct-${state.duration}.png`;
     try {
-      const { toBlob } = await import("html-to-image");
-      const blob = await toBlob(stageRef.current, {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(stageRef.current, {
         pixelRatio: 3,
         backgroundColor: "#ffffff",
-        cacheBust: true,
       });
-      if (!blob) throw new Error("toBlob returned null");
+      // Convert data URL to Blob for reliable download with proper filename
+      const blob = await (await fetch(dataUrl)).blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ibkr-${state.targetReturnPct}pct-${state.duration}.png`;
-      a.rel = "noopener";
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
-      console.error(e);
-      alert("Export failed: " + (e as Error).message);
+      console.error("[fake-ibkr] export failed:", e);
+      alert("导出失败: " + (e as Error).message);
     } finally {
       setExporting(false);
     }
