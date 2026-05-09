@@ -58,16 +58,22 @@ export default function Page() {
     if (!stageRef.current) return;
     setExporting(true);
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(stageRef.current, {
+      const { toBlob } = await import("html-to-image");
+      const blob = await toBlob(stageRef.current, {
         pixelRatio: 3,
         backgroundColor: "#ffffff",
         cacheBust: true,
       });
+      if (!blob) throw new Error("toBlob returned null");
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = dataUrl;
+      a.href = url;
       a.download = `ibkr-${state.targetReturnPct}pct-${state.duration}.png`;
+      a.rel = "noopener";
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       console.error(e);
       alert("Export failed: " + (e as Error).message);
